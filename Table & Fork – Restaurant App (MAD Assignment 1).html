@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Restaurant App – MAD Assignment 1</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EAF0EC;--card:#fff;--ink:#17262A;--mut:#5E706F;--pri:#0F4C45;--pri-ink:#fff;--acc:#E8A317;--line:#D3DDD8;--bad:#B3261E;box-sizing:border-box}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101A1A;--card:#182525;--ink:#EAF0EC;--mut:#95A8A5;--pri:#4FB8A6;--pri-ink:#08201C;--line:#2A3D3B}}
+:root[data-theme="dark"]{--bg:#101A1A;--card:#182525;--ink:#EAF0EC;--mut:#95A8A5;--pri:#4FB8A6;--pri-ink:#08201C;--line:#2A3D3B}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 'DM Sans',system-ui,sans-serif;display:flex;justify-content:center}
+h1,h2,h3{font-family:'Bricolage Grotesque',Georgia,serif;margin:0}
+#app{width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;background:var(--bg);padding-top:env(safe-area-inset-top,0px)}
+header{padding:14px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:22px}
+main{flex:1;overflow-y:auto;padding:0 16px 16px;position:relative}
+nav{display:flex;border-top:1px solid var(--line);background:var(--card);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:10px 2px;font:inherit;font-size:12px;cursor:pointer}
+nav button.on{color:var(--pri);font-weight:700;box-shadow:inset 0 2px var(--pri)}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);margin:4px 0 10px}
+.btn{background:var(--pri);color:var(--pri-ink);border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer;width:100%}
+.btn.sm{width:auto;padding:7px 12px;font-size:13px}.btn.alt{background:none;color:var(--pri);border:1px solid var(--pri)}.btn.bad{background:var(--bad);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mut{color:var(--mut);font-size:13px}.price{font-weight:700}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:6px 13px;white-space:nowrap;cursor:pointer}
+.chip.on{background:var(--pri);color:var(--pri-ink);border-color:var(--pri)}
+.badge{background:var(--acc);color:#241a00;border-radius:6px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:6px}
+.badge.g{background:var(--line);color:var(--mut)}
+.emoji{font-size:34px;width:56px;height:56px;border-radius:12px;background:var(--bg);display:grid;place-items:center;flex:none}
+.food{display:flex;gap:12px;align-items:center}.food>div:nth-child(2){flex:1}
+.q{display:flex;align-items:center;gap:8px}.q button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--card);cursor:pointer}
+.sug{position:absolute;left:16px;right:16px;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-top:-6px}
+.sug div{padding:9px 12px;cursor:pointer}
+.top{position:sticky;bottom:8px;float:right;border-radius:20px;border:0;background:var(--pri);color:var(--pri-ink);padding:8px 14px;cursor:pointer}
+.steps{display:flex;gap:4px;margin:8px 0}.steps i{flex:1;height:6px;border-radius:3px;background:var(--line)}.steps i.on{background:var(--pri)}
+.tbl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.tbl button{padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+.tbl button.on{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}.tbl button:disabled{opacity:.4;cursor:not-allowed}
+.err{color:var(--bad);font-size:13px;margin:-4px 0 8px}
+#toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+.seg{display:flex;gap:6px;margin-bottom:10px}.seg .chip{flex:1;text-align:center}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style></head><body>
+<div id="app"></div><div id="toast"></div>
+<script>
+// ---- Mock data (SRS section 5) ----
+const CATS=['All','Starters','Mains','Desserts','Drinks'];
+let MENU=[
+{id:1,name:'Crispy Samosas',description:'Spiced potato, mint chutney',price:6,category:'Starters',image:'🥟',isSpecial:false,isAvailable:true},
+{id:2,name:'Chicken Karahi',description:'Wok-cooked with tomato and ginger',price:16,category:'Mains',image:'🍲',isSpecial:true,isAvailable:true},
+{id:3,name:'Beef Burger',description:'Double patty, cheddar, house sauce',price:13,category:'Mains',image:'🍔',isSpecial:false,isAvailable:true},
+{id:4,name:'Margherita Pizza',description:'Basil, mozzarella, tomato',price:14,category:'Mains',image:'🍕',isSpecial:true,isAvailable:true},
+{id:5,name:'Garden Salad',description:'Greens, olives, lemon dressing',price:8,category:'Starters',image:'🥗',isSpecial:false,isAvailable:false},
+{id:6,name:'Gulab Jamun',description:'Warm milk dumplings in syrup',price:5,category:'Desserts',image:'🍮',isSpecial:false,isAvailable:true},
+{id:7,name:'Mango Lassi',description:'Yogurt, mango, cardamom',price:5,category:'Drinks',image:'🥭',isSpecial:false,isAvailable:true},
+{id:8,name:'Kashmiri Chai',description:'Pink tea with pistachio',price:4,category:'Drinks',image:'🍵',isSpecial:false,isAvailable:true}];
+const TABLES=[{id:1,tableNumber:1,seats:2},{id:2,tableNumber:2,seats:2},{id:3,tableNumber:3,seats:4},{id:4,tableNumber:4,seats:4},{id:5,tableNumber:5,seats:6},{id:6,tableNumber:6,seats:8}];
+const PROMOS={SAVE10:10,WELCOME20:20};
+const STATUS=['Pending','Preparing','Ready','Served'];
+const fmt=n=>'$'+n.toFixed(2);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---- State: Auth / Cart (reducer) / Orders / Theme contexts collapsed into one store ----
+let S={users:[{id:1,name:'Ayesha Khan',email:'customer@demo.com',password:'demo123',role:'customer'},{id:2,name:'Bilal Ahmed',email:'manager@demo.com',password:'demo123',role:'manager'}],
+user:null,tab:'menu',cart:[],promo:null,orders:[],reservations:[],cat:'All',q:'',authMode:'login',err:'',theme:'auto',mtab:'orders',rs:{date:'',time:'19:00',size:2,table:null,phone:''}};
+function cartReducer(cart,a){switch(a.t){
+ case 'add':{const i=cart.find(c=>c.id===a.id);return i?cart.map(c=>c.id===a.id?{...c,qty:c.qty+1}:c):[...cart,{id:a.id,qty:1,note:''}]}
+ case 'inc':return cart.map(c=>c.id===a.id?{...c,qty:c.qty+1}:c);
+ case 'dec':return cart.map(c=>c.id===a.id?{...c,qty:c.qty-1}:c).filter(c=>c.qty>0);
+ case 'rm':return cart.filter(c=>c.id!==a.id);
+ case 'note':return cart.map(c=>c.id===a.id?{...c,note:a.v}:c);
+ case 'clear':return [];default:return cart}}
+const cd=a=>{S.cart=cartReducer(S.cart,a)};
+const item=id=>MENU.find(m=>m.id===id);
+const totals=()=>{const sub=S.cart.reduce((s,c)=>s+item(c.id).price*c.qty,0);const disc=sub*(S.promo?PROMOS[S.promo]/100:0);const svc=(sub-disc)*.05,tax=(sub-disc)*.08;return{sub,disc,svc,tax,total:sub-disc+svc+tax}};
+const toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),1800)};
+const setTheme=t=>{S.theme=t;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t)};
+
+// ---- Views ----
+function authView(){const su=S.authMode==='signup';return `<main><div style="padding-top:40px"><h1 style="font-size:32px">Table &amp; Fork</h1><p class="mut">${su?'Create your account':'Log in to order, reserve and track.'}</p>
+${su?'<label>Name<input id="name" autocomplete="name"></label>':''}
+<label>Email<input id="email" type="email" autocomplete="email"></label>
+<label>Password<input id="pw" type="password" autocomplete="current-password"></label>
+${su?'<label>Confirm password<input id="pw2" type="password"></label><label>Role<select id="role"><option value="customer">Customer</option><option value="manager">Manager</option></select></label>':''}
+${S.err?`<div class="err">${esc(S.err)}</div>`:''}
+<button class="btn" data-a="auth">${su?'Sign up':'Log in'}</button>
+<p style="text-align:center"><button class="chip" data-a="mode">${su?'I have an account':'Create an account'}</button></p>
+${su?'':'<p class="mut">Demo: customer@demo.com or manager@demo.com, password demo123</p>'}</div></main>`}
+
+function menuView(){const q=S.q.trim().toLowerCase();
+ const list=MENU.filter(m=>(S.cat==='All'||m.category===S.cat)&&(!q||m.name.toLowerCase().includes(q)));
+ const sug=q&&document.activeElement&&document.activeElement.id==='search'?MENU.filter(m=>m.name.toLowerCase().includes(q)).slice(0,3):[];
+ const specials=MENU.filter(m=>m.isSpecial&&m.isAvailable);
+ return `<main id="scroll"><div class="row" style="position:relative"><input id="search" placeholder="Search food" value="${esc(S.q)}" autocomplete="off">${S.q?'<button class="chip" data-a="clr" style="position:absolute;right:6px;top:8px" aria-label="Clear search">Clear</button>':''}</div>
+ ${sug.length?`<div class="sug">${sug.map(s=>`<div data-a="sug" data-v="${esc(s.name)}">${esc(s.name)}</div>`).join('')}</div>`:''}
+ <div class="chips">${CATS.map(c=>`<button class="chip ${S.cat===c?'on':''}" data-a="cat" data-v="${c}">${c}</button>`).join('')}</div>
+ ${!q&&S.cat==='All'?`<h3 style="margin-bottom:8px">Daily specials</h3><div class="card" style="background:var(--pri);color:var(--pri-ink)">${specials.map(s=>`${s.image} ${esc(s.name)} · ${fmt(s.price)}`).join('<br>')}</div>`:''}
+ ${list.length?list.map(m=>`<div class="card food"><div class="emoji">${m.image}</div><div><b>${esc(m.name)}</b>${m.isSpecial?'<span class="badge">Daily special</span>':''}<div class="mut">${esc(m.description)}</div><div class="price">${fmt(m.price)} ${m.isAvailable?'':'<span class="badge g">Unavailable</span>'}</div></div>
+ <button class="btn sm" data-a="add" data-id="${m.id}" ${m.isAvailable?'':'disabled style="opacity:.4"'}>Add</button></div>`).join(''):'<div class="card mut">No items match your search. Try another word or category.</div>'}
+ <button class="top" data-a="top">Back to top</button></main>`}
+
+function cartView(){if(!S.cart.length)return `<main><div class="card mut" style="margin-top:12px">Your cart is empty. Add something from the menu.</div></main>`;
+ const t=totals();
+ return `<main><h2 style="margin:6px 0 10px">Cart</h2>${S.cart.map(c=>{const m=item(c.id);return `<div class="card"><div class="row"><b>${m.image} ${esc(m.name)}</b><span class="price">${fmt(m.price*c.qty)}</span></div>
+ <input data-a="note" data-id="${c.id}" placeholder="Special instructions" value="${esc(c.note)}">
+ <div class="row"><div class="q"><button data-a="dec" data-id="${c.id}" aria-label="Decrease">−</button>${c.qty}<button data-a="inc" data-id="${c.id}" aria-label="Increase">+</button></div><button class="chip" data-a="rm" data-id="${c.id}">Remove</button></div></div>`}).join('')}
+ <div class="row"><input id="promo" placeholder="Promo code" value="${S.promo||''}"><button class="btn sm alt" data-a="promo" style="margin-bottom:6px">Apply</button></div>
+ <div class="card"><h3>Order summary</h3>
+ <div class="row"><span>Subtotal</span><span>${fmt(t.sub)}</span></div>
+ ${S.promo?`<div class="row"><span>Discount (${PROMOS[S.promo]}%)</span><span>−${fmt(t.disc)}</span></div>`:''}
+ <div class="row"><span>Service charge (5%)</span><span>${fmt(t.svc)}</span></div>
+ <div class="row"><span>Tax (8%)</span><span>${fmt(t.tax)}</span></div>
+ <div class="row price" style="font-size:18px;margin-top:6px"><span>Total</span><span>${fmt(t.total)}</span></div></div>
+ <button class="btn" data-a="place">Place order · ${fmt(t.total)}</button></main>`}
+
+const stepper=s=>s==='Cancelled'?'<span class="badge g">Cancelled</span>':`<div class="steps">${STATUS.map((x,i)=>`<i class="${i<=STATUS.indexOf(s)?'on':''}"></i>`).join('')}</div>`;
+function ordersView(){const mine=S.orders.filter(o=>o.userId===S.user.id).slice().reverse();
+ return `<main><h2 style="margin:6px 0 10px">Track orders</h2>${mine.length?mine.map(o=>`<div class="card"><div class="row"><b>Order #${o.id}</b><span class="badge">${o.status}</span></div>${stepper(o.status)}
+ <div class="mut">${o.items.map(i=>i.qty+'× '+esc(item(i.id).name)).join(', ')}</div><div class="row"><span class="price">${fmt(o.total)}</span>${o.status==='Pending'?`<button class="chip" data-a="cancel" data-id="${o.id}">Cancel order</button>`:''}</div></div>`).join(''):'<div class="card mut">No orders yet. Place one from your cart.</div>'}</main>`}
+
+function bookedIds(date,time){return S.reservations.filter(r=>r.date===date&&r.time===time&&r.status!=='Declined'&&r.status!=='Cancelled').map(r=>r.tableId)}
+function resView(){const r=S.rs;const booked=bookedIds(r.date,r.time);
+ const mine=S.reservations.filter(x=>x.userId===S.user.id);
+ return `<main><h2 style="margin:6px 0 10px">Reserve a table</h2><div class="card">
+ <label>Date<input id="rdate" type="date" value="${r.date}"></label>
+ <label>Time<select id="rtime">${['12:00','13:00','14:00','19:00','20:00','21:00'].map(t=>`<option ${t===r.time?'selected':''}>${t}</option>`).join('')}</select></label>
+ <label>Party size<input id="rsize" type="number" min="1" max="8" value="${r.size}"></label>
+ <div class="mut" style="margin-bottom:6px">Tables that fit ${r.size} guests</div>
+ <div class="tbl">${TABLES.map(t=>{const ok=t.seats>=r.size&&!booked.includes(t.id);return `<button data-a="tbl" data-id="${t.id}" class="${r.table===t.id?'on':''}" ${ok?'':'disabled'}>Table ${t.tableNumber}<br><span class="mut">${t.seats} seats${booked.includes(t.id)?' · taken':''}</span></button>`}).join('')}</div>
+ <label>Contact number<input id="rphone" type="tel" value="${esc(r.phone)}"></label>
+ ${S.err?`<div class="err">${esc(S.err)}</div>`:''}<button class="btn" data-a="reserve">Confirm reservation</button></div>
+ ${mine.length?'<h3 style="margin:14px 0 8px">Your reservations</h3>':''}${mine.map(x=>`<div class="card row"><div><b>Table ${TABLES.find(t=>t.id===x.tableId).tableNumber}</b> · ${x.date} ${x.time}<div class="mut">${x.partySize} guests · <span class="badge">${x.status}</span></div></div>${x.status==='Cancelled'||x.status==='Declined'?'':`<button class="chip" data-a="rcancel" data-id="${x.id}">Cancel</button>`}</div>`).join('')}</main>`}
+
+function profileView(){return `<main><h2 style="margin:6px 0 10px">Profile</h2><div class="card"><b>${esc(S.user.name)}</b><div class="mut">${esc(S.user.email)}</div><span class="badge">${S.user.role}</span></div>
+ <div class="card"><b>Theme</b><div class="seg" style="margin-top:8px">${['auto','light','dark'].map(t=>`<button class="chip ${S.theme===t?'on':''}" data-a="theme" data-v="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div></div>
+ <button class="btn alt" data-a="logout">Log out</button></main>`}
+
+function mgrView(){const t=S.mtab;
+ const body=t==='orders'?(S.orders.length?S.orders.slice().reverse().map(o=>`<div class="card"><div class="row"><b>Order #${o.id}</b><span class="badge">${o.status}</span></div><div class="mut">${o.items.map(i=>i.qty+'× '+esc(item(i.id).name)+(i.note?' ('+esc(i.note)+')':'')).join(', ')}</div>
+ <div class="row" style="margin-top:8px"><span class="price">${fmt(o.total)}</span>${o.status!=='Served'&&o.status!=='Cancelled'?`<button class="btn sm" data-a="adv" data-id="${o.id}">Mark ${STATUS[STATUS.indexOf(o.status)+1]}</button>`:''}</div></div>`).join(''):'<div class="card mut">No incoming orders yet.</div>')
+ :t==='res'?(S.reservations.length?S.reservations.map(x=>`<div class="card"><b>Table ${TABLES.find(a=>a.id===x.tableId).tableNumber}</b> · ${x.date} ${x.time}<div class="mut">${x.partySize} guests · ${x.phone||'no phone'} · <span class="badge">${x.status}</span></div>
+ ${x.status==='Pending'?`<div class="row" style="margin-top:8px"><button class="btn sm" data-a="racc" data-id="${x.id}">Accept</button><button class="btn sm bad" data-a="rdec" data-id="${x.id}">Decline</button></div>`:''}</div>`).join(''):'<div class="card mut">No reservations yet.</div>')
+ :`<div class="card"><b>Add menu item</b><input id="nn" placeholder="Name"><input id="np" type="number" placeholder="Price"><select id="nc">${CATS.slice(1).map(c=>`<option>${c}</option>`).join('')}</select><button class="btn" data-a="addmenu">Add item</button></div>`+MENU.map(m=>`<div class="card"><div class="row"><b>${m.image} ${esc(m.name)}</b><button class="chip" data-a="avail" data-id="${m.id}">${m.isAvailable?'Available':'Unavailable'}</button></div>
+ <div class="row" style="margin-top:6px"><span class="mut">Price</span><input type="number" data-a="price" data-id="${m.id}" value="${m.price}" style="width:90px;margin:0"></div></div>`).join('');
+ return `<main><h2 style="margin:6px 0 10px">Manager dashboard</h2><div class="seg">${[['orders','Orders'],['res','Reservations'],['menu','Menu']].map(([k,l])=>`<button class="chip ${t===k?'on':''}" data-a="mt" data-v="${k}">${l}</button>`).join('')}</div>${body}</main>`}
+
+function render(){const app=document.getElementById('app');
+ if(!S.user){app.innerHTML=authView();return}
+ const mgr=S.user.role==='manager';
+ const tabs=mgr?[['dash','Dashboard'],['profile','Profile']]:[['menu','Menu'],['cart','Cart'+(S.cart.length?` (${S.cart.reduce((s,c)=>s+c.qty,0)})`:'')],['orders','Orders'],['res','Reserve'],['profile','Profile']];
+ const tab=mgr&&S.tab!=='profile'?'dash':S.tab;
+ const v={menu:menuView,cart:cartView,orders:ordersView,res:resView,profile:profileView,dash:mgrView}[tab]||menuView;
+ const keep=document.querySelector('main')?.scrollTop||0,f=document.activeElement?.id,pos=document.activeElement?.selectionStart;
+ app.innerHTML=`<header><h1>Table &amp; Fork</h1><span class="mut">Hi, ${esc(S.user.name.split(' ')[0])}</span></header>${v()}<nav>${tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" data-a="tab" data-v="${k}">${l}</button>`).join('')}</nav>`;
+ const m=document.querySelector('main');if(m)m.scrollTop=keep;
+ if(f){const e=document.getElementById(f);if(e){e.focus();try{e.setSelectionRange(pos,pos)}catch(_){}}}}
+
+// ---- Events ----
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.tagName==='INPUT')return;const a=b.dataset.a,id=+b.dataset.id,v=b.dataset.v;S.err='';
+ const ord=()=>S.orders.find(o=>o.id===id),res=()=>S.reservations.find(r=>r.id===id);
+ if(a==='mode'){S.authMode=S.authMode==='login'?'signup':'login'}
+ else if(a==='auth'){const g=x=>document.getElementById(x)?.value.trim()||'';const em=g('email'),pw=g('pw');
+  if(!/^\S+@\S+\.\S+$/.test(em))S.err='Enter a valid email address.';
+  else if(pw.length<6)S.err='Password must be at least 6 characters.';
+  else if(S.authMode==='signup'){if(!g('name'))S.err='Enter your name.';else if(pw!==g('pw2'))S.err='Passwords do not match.';else if(S.users.some(u=>u.email===em))S.err='That email is already registered.';
+   else{const u={id:Date.now(),name:g('name'),email:em,password:pw,role:g('role')};S.users.push(u);S.user=u;S.tab=u.role==='manager'?'dash':'menu'}}
+  else{const u=S.users.find(u=>u.email===em&&u.password===pw);if(!u)S.err='Email or password is incorrect.';else{S.user=u;S.tab=u.role==='manager'?'dash':'menu'}}}
+ else if(a==='tab')S.tab=v;
+ else if(a==='cat')S.cat=v;
+ else if(a==='clr')S.q='';
+ else if(a==='sug'){S.q=v;document.activeElement.blur()}
+ else if(a==='top'){document.querySelector('main').scrollTo({top:0,behavior:'smooth'});return}
+ else if(a==='add'){cd({t:'add',id});toast('Added to cart')}
+ else if(['inc','dec','rm'].includes(a))cd({t:a,id});
+ else if(a==='promo'){const c=document.getElementById('promo').value.trim().toUpperCase();if(PROMOS[c]){S.promo=c;toast('Promo applied')}else{S.promo=null;toast('Invalid promo code (try SAVE10)')}}
+ else if(a==='place'){const t=totals();S.orders.push({id:S.orders.length+101,userId:S.user.id,items:S.cart.map(c=>({...c})),total:t.total,type:'dine-in',status:'Pending',timestamp:new Date().toISOString()});cd({t:'clear'});S.promo=null;S.tab='orders';toast('Order placed')}
+ else if(a==='cancel'){ord().status='Cancelled'}
+ else if(a==='tbl')S.rs.table=id;
+ else if(a==='reserve'){const r=S.rs;if(!r.date)S.err='Choose a date.';else if(!r.table)S.err='Choose an available table.';else if(!r.phone)S.err='Enter a contact number.';
+  else{S.reservations.push({id:Date.now(),userId:S.user.id,date:r.date,time:r.time,partySize:r.size,tableId:r.table,phone:r.phone,status:'Pending'});S.rs={date:'',time:'19:00',size:2,table:null,phone:''};toast('Reservation sent')}}
+ else if(a==='rcancel')res().status='Cancelled';
+ else if(a==='theme')setTheme(v);
+ else if(a==='logout'){S.user=null;S.cart=[];S.promo=null}
+ else if(a==='mt')S.mtab=v;
+ else if(a==='adv'){const o=ord();o.status=STATUS[STATUS.indexOf(o.status)+1]}
+ else if(a==='racc')res().status='Confirmed';
+ else if(a==='rdec')res().status='Declined';
+ else if(a==='avail'){const m=item(id);m.isAvailable=!m.isAvailable}
+ else if(a==='addmenu'){const n=document.getElementById('nn').value.trim(),p=+document.getElementById('np').value;if(!n||!(p>0)){toast('Enter a name and price');return}
+  MENU.push({id:Date.now(),name:n,description:'New item',price:p,category:document.getElementById('nc').value,image:'🍽️',isSpecial:false,isAvailable:true});toast('Item added')}
+ render()});
+document.addEventListener('input',e=>{const t=e.target,a=t.dataset.a;
+ if(t.id==='search'){S.q=t.value;render()}
+ else if(a==='note')S.cart.find(c=>c.id===+t.dataset.id).note=t.value;
+ else if(t.id==='rphone')S.rs.phone=t.value;
+ else if(t.id==='rsize'){S.rs.size=Math.max(1,Math.min(8,+t.value||1));S.rs.table=null;render()}});
+document.addEventListener('change',e=>{const t=e.target,a=t.dataset.a;
+ if(t.id==='rdate'){S.rs.date=t.value;S.rs.table=null;render()}
+ else if(t.id==='rtime'){S.rs.time=t.value;S.rs.table=null;render()}
+ else if(a==='price'){const p=+t.value;if(p>0){item(+t.dataset.id).price=p;toast('Price updated')}render()}});
+document.addEventListener('focusout',e=>{if(e.target.id==='search')setTimeout(render,150)});
+render();
+</script></body></html>
